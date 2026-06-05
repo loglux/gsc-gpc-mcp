@@ -9,6 +9,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.1] - 2026-06-05
+
+### Changed
+- HTTP transport support: servers now run `streamable-http` when `PORT` env var is set, stdio otherwise
+- Added `Dockerfile` and `docker-compose.yml` for containerised deployment behind authmcp-gateway
+- Updated README with correct gateway integration instructions (backends registered via REST API, not config file)
+
+### Fixed
+- Ruff lint errors: import ordering (I001), unused imports (F401), line length (E501)
+
+---
+
 ## [0.1.0] - 2026-06-05
 
 ### Added

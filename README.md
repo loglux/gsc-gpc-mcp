@@ -1,9 +1,9 @@
 # gsc-gpc-mcp
 
-MCP servers for **Google Search Console** and **Google Play Console**, designed to run behind [AuthMCP Gateway](https://github.com/authmcp/gateway).
+MCP servers for **Google Search Console** and **Google Play Console**, designed to run behind [authmcp-gateway](https://github.com/loglux/authmcp-gateway).
 
 ```
-Claude ↔ MCP Gateway (AuthMCP) ↔ gsc-gpc-mcp ↔ Google APIs
+Claude ↔ authmcp-gateway ↔ gsc-gpc-mcp ↔ Google APIs
 ```
 
 ## Servers
@@ -35,10 +35,10 @@ Claude ↔ MCP Gateway (AuthMCP) ↔ gsc-gpc-mcp ↔ Google APIs
 
 Create two service accounts in [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts):
 
-- `gsc-reader@YOUR_PROJECT.iam.gserviceaccount.com` — scopes: `webmasters.readonly`
-- `gpc-reader@YOUR_PROJECT.iam.gserviceaccount.com` — scopes: `androidpublisher`
+- `gsc-reader@YOUR_PROJECT.iam.gserviceaccount.com` — scope: `webmasters.readonly`
+- `gpc-reader@YOUR_PROJECT.iam.gserviceaccount.com` — scope: `androidpublisher`
 
-Download JSON keys and place them in the `credentials/` directory:
+Download JSON keys and place them in `credentials/`:
 
 ```
 credentials/
@@ -50,63 +50,97 @@ credentials/
 
 **Search Console:** Settings → Users and permissions → Add user → paste service account email → Owner or Full
 
-**Play Console:** Setup → API access → Link to Google Cloud project → Grant access to service account
+**Play Console:** Setup → API access → Link Google Cloud project → grant access to service account
 
-### 3. Install
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
-```
-
-### 4. Run
+### 3. Run with Docker Compose
 
 ```bash
-# GSC server
-python -m gsc.server
-
-# GPC server
-python -m gpc.server
+docker compose up -d
 ```
 
-### Custom key file paths
+This starts two HTTP MCP servers:
+- `gsc` — reachable at `http://gsc:8000/mcp` (internal Docker network)
+- `gpc` — reachable at `http://gpc:8000/mcp` (internal Docker network)
 
-Override the default filenames via environment variables:
-
-```bash
-GSC_KEY_FILE=my-gsc-key.json python -m gsc.server
-GPC_KEY_FILE=my-gpc-key.json python -m gpc.server
-```
-
-## AuthMCP Gateway config
+If you expose ports to the host for testing:
 
 ```yaml
-backends:
-  - name: gsc
-    command: python -m gsc.server
-    cwd: /path/to/gsc-gpc-mcp
+# add to docker-compose.yml temporarily:
+ports:
+  - "8001:8000"   # gsc
+  - "8002:8000"   # gpc
+```
 
-  - name: gpc
-    command: python -m gpc.server
-    cwd: /path/to/gsc-gpc-mcp
+### 4. Register backends in authmcp-gateway
+
+The gateway does not read a config file — backends are registered at runtime via the admin API or UI.
+
+**Via admin UI:** open `http://localhost:9105/admin` → MCP Servers → Add Server.
+
+**Via API:**
+
+```bash
+# 1. Get a token
+TOKEN=$(curl -s -X POST http://localhost:9105/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"yourpassword"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+# 2. Register GSC
+curl -X POST http://localhost:9105/admin/api/mcp-servers \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "gsc",
+    "url": "http://gsc:8000/mcp",
+    "description": "Google Search Console",
+    "tool_prefix": "gsc_",
+    "routing_strategy": "prefix",
+    "enabled": true
+  }'
+
+# 3. Register GPC
+curl -X POST http://localhost:9105/admin/api/mcp-servers \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "gpc",
+    "url": "http://gpc:8000/mcp",
+    "description": "Google Play Console",
+    "tool_prefix": "gpc_",
+    "routing_strategy": "prefix",
+    "enabled": true
+  }'
+```
+
+## Local development (without Docker)
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+
+# stdio mode (for direct testing with MCP Inspector)
+python -m gsc.server
+python -m gpc.server
+
+# HTTP mode
+PORT=8001 python -m gsc.server
+PORT=8002 python -m gpc.server
+```
+
+Custom key file paths:
+
+```bash
+GSC_KEY_FILE=my-gsc-key.json PORT=8001 python -m gsc.server
 ```
 
 ## Development
 
 ```bash
-# Install with dev dependencies
-pip install -e ".[dev]"
-
-# Run tests
-make test
-
-# Lint + format
-make lint
-make format
-
-# Type check
-make type-check
+make test        # run tests
+make lint        # ruff check
+make format      # ruff format + fix
+make type-check  # mypy
 ```
 
 ## Project structure
@@ -114,7 +148,7 @@ make type-check
 ```
 gsc-gpc-mcp/
 ├── shared/
-│   └── auth.py          # Shared Google auth helper
+│   └── auth.py          # Google auth helper (service account)
 ├── gsc/
 │   ├── server.py        # FastMCP server — Search Console
 │   └── tools.py         # Business logic
@@ -122,7 +156,9 @@ gsc-gpc-mcp/
 │   ├── server.py        # FastMCP server — Play Console
 │   └── tools.py         # Business logic
 ├── tests/               # Unit tests (mocked, no real API calls)
-└── credentials/         # gitignored — place JSON keys here
+├── credentials/         # gitignored — place JSON keys here
+├── Dockerfile
+└── docker-compose.yml
 ```
 
 ## License

@@ -1,3 +1,5 @@
+import os
+
 from fastmcp import FastMCP
 
 from gsc import tools
@@ -75,7 +77,11 @@ def gsc_list_sites() -> dict:
 
 
 def main():
-    mcp.run()
+    port = int(os.environ.get("PORT", 0))
+    if port:
+        mcp.run(transport="streamable-http", host="0.0.0.0", port=port)
+    else:
+        mcp.run()  # stdio — for local testing
 
 
 if __name__ == "__main__":
