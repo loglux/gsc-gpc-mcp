@@ -9,6 +9,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.2] - 2026-06-05
+
+### Added
+- `GOOGLE_KEY_FILE` env var — one shared service account key for both servers
+- `.pre-commit-config.yaml` — ruff lint + format runs automatically on every `git commit`
+
+### Changed
+- Key resolution priority: `GOOGLE_KEY_FILE` → `GSC_KEY_FILE`/`GPC_KEY_FILE` → default filenames
+
+---
+
 ## [0.1.1] - 2026-06-05
 
 ### Changed
