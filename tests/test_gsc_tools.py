@@ -31,8 +31,12 @@ def test_get_performance_default_dimensions(mock_service):
 def test_get_performance_custom_dimensions(mock_service):
     mock_service.searchanalytics().query().execute.return_value = {}
     tools.get_performance(
-        mock_service, "https://example.com/", "2024-01-01", "2024-01-31",
-        dimensions=["page", "country"], row_limit=500,
+        mock_service,
+        "https://example.com/",
+        "2024-01-01",
+        "2024-01-31",
+        dimensions=["page", "country"],
+        row_limit=500,
     )
     call_body = mock_service.searchanalytics().query.call_args[1]["body"]
     assert call_body["dimensions"] == ["page", "country"]
@@ -58,7 +62,9 @@ def test_list_sitemaps(mock_service):
 
 
 def test_submit_sitemap(mock_service):
-    result = tools.submit_sitemap(mock_service, "https://example.com/", "https://example.com/sitemap.xml")
+    result = tools.submit_sitemap(
+        mock_service, "https://example.com/", "https://example.com/sitemap.xml"
+    )
     assert result["status"] == "submitted"
     assert "sitemap.xml" in result["sitemap"]
 

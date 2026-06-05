@@ -24,9 +24,7 @@ def get_review(service: Resource, package_name: str, review_id: str) -> dict:
 def reply_to_review(service: Resource, package_name: str, review_id: str, reply_text: str) -> dict:
     body = {"replyText": reply_text}
     return (
-        service.reviews()
-        .reply(packageName=package_name, reviewId=review_id, body=body)
-        .execute()
+        service.reviews().reply(packageName=package_name, reviewId=review_id, body=body).execute()
     )
 
 

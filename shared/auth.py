@@ -17,9 +17,7 @@ def load_credentials(json_filename: str, scopes: list[str]) -> service_account.C
             f"Service account key not found: {json_path}\n"
             f"Place your JSON key file in the credentials/ directory."
         )
-    return service_account.Credentials.from_service_account_file(
-        str(json_path), scopes=scopes
-    )
+    return service_account.Credentials.from_service_account_file(str(json_path), scopes=scopes)
 
 
 def build_gsc_service():
