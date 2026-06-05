@@ -1,4 +1,4 @@
-.PHONY: install install-dev lint format type-check test test-cov run-gsc run-gpc clean
+.PHONY: install install-dev setup setup-web lint format type-check test test-cov run-gsc run-gpc clean
 
 PYTHON := python
 PIP := pip
@@ -7,6 +7,12 @@ VENV_PYTHON := $(VENV)/bin/python
 VENV_PIP := $(VENV)/bin/pip
 
 # ── Setup ──────────────────────────────────────────────────────────────────────
+
+setup:
+	$(PYTHON) scripts/setup.py
+
+setup-web:
+	$(PYTHON) scripts/setup_web.py
 
 install:
 	$(PIP) install -e .
