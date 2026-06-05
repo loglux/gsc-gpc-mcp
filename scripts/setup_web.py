@@ -244,7 +244,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    server = HTTPServer(("localhost", PORT), Handler)
+    server = HTTPServer(("0.0.0.0", PORT), Handler)
     url = f"http://localhost:{PORT}"
     print(f"\n  Setup wizard → {url}")
     print("  Ctrl+C to stop\n")

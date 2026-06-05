@@ -194,7 +194,7 @@ def step_env() -> None:
         f"\n"
         f"# Ports (only needed for local HTTP mode, not Docker)\n"
         f"# GSC_PORT=8001\n"
-        f"# GPC_PORT=8002\n"
+        f"# GPC_PORT=8005\n"
         f"\n"
         f"# Optional: one key for both servers\n"
         f"# GOOGLE_KEY_FILE=google-service-account.json\n"
@@ -298,7 +298,7 @@ def step_summary(creds_ok: bool) -> None:
         print("    python -m gpc.server\n")
         print(f"  {BOLD}Local (HTTP):{RESET}")
         print("    PORT=8001 python -m gsc.server")
-        print("    PORT=8002 python -m gpc.server\n")
+        print("    PORT=8005 python -m gpc.server\n")
         print(f"  {BOLD}Docker:{RESET}")
         print("    docker compose up -d\n")
         print(f"  {BOLD}Register in authmcp-gateway:{RESET}")

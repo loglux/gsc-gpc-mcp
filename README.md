@@ -70,7 +70,7 @@ If you expose ports to the host for testing:
 # add to docker-compose.yml temporarily:
 ports:
   - "8001:8000"   # gsc
-  - "8002:8000"   # gpc
+  - "8005:8000"   # gpc
 ```
 
 ### 4. Register backends in authmcp-gateway
@@ -127,7 +127,7 @@ python -m gpc.server
 
 # HTTP mode
 PORT=8001 python -m gsc.server
-PORT=8002 python -m gpc.server
+PORT=8005 python -m gpc.server
 ```
 
 Custom key file paths:

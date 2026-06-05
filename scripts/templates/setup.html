@@ -159,7 +159,7 @@
       {# Test connection — only if key is valid #}
       {% if gpc.ok %}
       <hr class="divider">
-      <form method="POST" action="/test/gpc" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:2px">
+      <form method="POST" action="/test/gpc" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:2px">
         <input type="text" name="package_name" placeholder="com.example.app"
                value="{{ gpc_package }}" required>
         <button type="submit" class="btn-test">⚡ Test connection</button>
@@ -196,7 +196,7 @@
     <b>✓ Setup complete — ready to run</b><br><br>
     <b>Local HTTP mode:</b><br>
     <code>PORT=8001 python -m gsc.server</code>
-    <code>PORT=8002 python -m gpc.server</code><br>
+    <code>PORT=8005 python -m gpc.server</code><br>
     <b>Docker:</b><br>
     <code>docker compose up -d</code><br><br>
     Register backends in
