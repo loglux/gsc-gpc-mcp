@@ -9,6 +9,10 @@ CREDENTIALS_DIR = Path(__file__).parent.parent / "credentials"
 GSC_SCOPES = ["https://www.googleapis.com/auth/webmasters.readonly"]
 GPC_SCOPES = ["https://www.googleapis.com/auth/androidpublisher"]
 
+# API versions — update here if Google releases a new version
+GSC_API_VERSION = "v1"
+GPC_API_VERSION = "v3"
+
 
 def load_credentials(json_filename: str, scopes: list[str]) -> service_account.Credentials:
     json_path = CREDENTIALS_DIR / json_filename
@@ -26,7 +30,7 @@ def build_gsc_service():
         "GSC_KEY_FILE", "gsc-service-account.json"
     )
     creds = load_credentials(key_file, GSC_SCOPES)
-    return build("searchconsole", "v1", credentials=creds)
+    return build("searchconsole", GSC_API_VERSION, credentials=creds)
 
 
 def build_gpc_service():
@@ -34,4 +38,4 @@ def build_gpc_service():
         "GPC_KEY_FILE", "gpc-service-account.json"
     )
     creds = load_credentials(key_file, GPC_SCOPES)
-    return build("androidpublisher", "v3", credentials=creds)
+    return build("androidpublisher", GPC_API_VERSION, credentials=creds)
