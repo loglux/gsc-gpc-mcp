@@ -203,8 +203,74 @@ def step_env() -> None:
     ok(f".env created: {env_file}")
 
 
+def test_gsc_connection() -> tuple[bool, str]:
+    try:
+        sys.path.insert(0, str(ROOT))
+        from shared.auth import build_gsc_service
+
+        svc = build_gsc_service()
+        result = svc.sites().list().execute()
+        sites = [e["siteUrl"] for e in result.get("siteEntry", [])]
+        if sites:
+            return True, "Properties: " + ", ".join(sites)
+        return (
+            True,
+            "Connected — no properties accessible yet (add service account in Search Console)",
+        )
+    except Exception as e:
+        return False, str(e)
+
+
+def test_gpc_connection(package_name: str) -> tuple[bool, str]:
+    try:
+        sys.path.insert(0, str(ROOT))
+        from shared.auth import build_gpc_service
+
+        svc = build_gpc_service()
+        result = svc.reviews().list(packageName=package_name, maxResults=5).execute()
+        count = len(result.get("reviews", []))
+        return True, f"Connected — {count} review(s) returned for {package_name}"
+    except Exception as e:
+        return False, str(e)
+
+
+def step_test_connections(gsc_ok: bool, gpc_ok: bool) -> None:
+    header("Step 3 — Test Connections")
+
+    answer = pause("Test API connections now? [Y/n]")
+    if answer.lower() in ("n", "no"):
+        info("Skipped — test later by re-running setup")
+        return
+
+    if gsc_ok:
+        info("Testing GSC...")
+        success, msg = test_gsc_connection()
+        if success:
+            ok(f"GSC: {msg}")
+        else:
+            err(f"GSC: {msg}")
+    else:
+        warn("GSC: skipped (no key)")
+
+    if gpc_ok:
+        package = os.environ.get("GPC_PACKAGE_NAME", "").strip()
+        if not package:
+            package = pause("GPC package name (e.g. com.example.app):").strip()
+        if package:
+            info(f"Testing GPC with {package}...")
+            success, msg = test_gpc_connection(package)
+            if success:
+                ok(f"GPC: {msg}")
+            else:
+                err(f"GPC: {msg}")
+        else:
+            warn("GPC: skipped (no package name)")
+    else:
+        warn("GPC: skipped (no key)")
+
+
 def step_run_tests() -> None:
-    header("Step 4 — Run Tests")
+    header("Step 4 — Unit Tests")
 
     answer = pause("Run unit tests now? [Y/n]")
     if answer.lower() in ("n", "no"):
@@ -254,6 +320,9 @@ def main() -> None:
         sys.exit(1)
 
     creds_ok = step_credentials()
+    gsc_ok, _ = check_key("GSC", "gsc-service-account.json", "GSC_KEY_FILE")
+    gpc_ok, _ = check_key("GPC", "gpc-service-account.json", "GPC_KEY_FILE")
+    step_test_connections(gsc_ok, gpc_ok)
     step_env()
     step_run_tests()
     step_summary(creds_ok)

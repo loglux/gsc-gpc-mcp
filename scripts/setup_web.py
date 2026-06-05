@@ -59,6 +59,7 @@ def get_status() -> dict:
         "all_ok": deps_ok and gsc["ok"] and gpc["ok"],
         "env_exists": (ROOT / ".env").exists(),
         "python": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "gpc_package": os.environ.get("GPC_PACKAGE_NAME", ""),
     }
 
 
@@ -91,23 +92,67 @@ def save_uploaded_key(target_name: str, file_data: bytes) -> tuple[bool, str]:
     dest.write_bytes(file_data)
     data = validate_key_file(dest)
     if data:
-        return True, f"Key uploaded and validated: {target_name}"
+        return (
+            True,
+            f"✓ Key uploaded: {target_name} (project: {data['project_id']}, email: {data['client_email']})",
+        )
     dest.unlink(missing_ok=True)
-    return False, "Invalid service account JSON — file removed."
+    return False, "✗ Invalid service account JSON — file removed."
 
 
-def parse_multipart(body: bytes, content_type: str) -> tuple[str, bytes]:
-    """Return (target_filename, file_bytes) from a multipart/form-data body."""
+def parse_multipart(body: bytes, content_type: str) -> dict[str, bytes | str]:
+    """Parse multipart/form-data, return dict of field_name → value."""
     boundary = content_type.split("boundary=")[-1].encode()
     parts = body.split(b"--" + boundary)
-    target_name = ""
-    file_data = b""
+    fields: dict[str, bytes | str] = {}
     for part in parts:
-        if b'name="target"' in part:
-            target_name = part.split(b"\r\n\r\n", 1)[-1].strip().decode()
-        elif b'name="file"' in part and b"filename=" in part:
-            file_data = part.split(b"\r\n\r\n", 1)[-1].rsplit(b"\r\n", 1)[0]
-    return target_name, file_data
+        if b"Content-Disposition" not in part:
+            continue
+        header, _, payload = part.partition(b"\r\n\r\n")
+        payload = payload.rsplit(b"\r\n", 1)[0]
+        header_str = header.decode(errors="replace")
+        if 'filename="' in header_str:
+            # file field — keep as bytes
+            name = header_str.split('name="')[1].split('"')[0]
+            fields[name] = payload
+        else:
+            # text field
+            name = header_str.split('name="')[1].split('"')[0]
+            fields[name] = payload.decode().strip()
+    return fields
+
+
+def test_gsc_connection() -> tuple[bool, str]:
+    try:
+        sys.path.insert(0, str(ROOT))
+        from shared.auth import build_gsc_service
+
+        svc = build_gsc_service()
+        result = svc.sites().list().execute()
+        sites = [e["siteUrl"] for e in result.get("siteEntry", [])]
+        if sites:
+            return True, "Connected. Properties: " + ", ".join(sites)
+        return (
+            True,
+            "Connected — no properties accessible yet (add service account email in Search Console)",
+        )
+    except Exception as e:
+        return False, f"Failed: {e}"
+
+
+def test_gpc_connection(package_name: str) -> tuple[bool, str]:
+    if not package_name:
+        return False, "Package name required (e.g. com.example.app)"
+    try:
+        sys.path.insert(0, str(ROOT))
+        from shared.auth import build_gpc_service
+
+        svc = build_gpc_service()
+        result = svc.reviews().list(packageName=package_name, maxResults=5).execute()
+        count = len(result.get("reviews", []))
+        return True, f"Connected — {count} review(s) returned for {package_name}"
+    except Exception as e:
+        return False, f"Failed: {e}"
 
 
 # ── HTTP handler ──────────────────────────────────────────────────────────────
@@ -115,13 +160,15 @@ def parse_multipart(body: bytes, content_type: str) -> tuple[str, bytes]:
 
 class Handler(BaseHTTPRequestHandler):
     _message: str = ""
+    _message_ok: bool = True
 
     def log_message(self, *args):
         pass
 
-    def render(self, message: str = "", code: int = 200) -> None:
+    def render(self, message: str = "", message_ok: bool = True, code: int = 200) -> None:
         ctx = get_status()
         ctx["message"] = message
+        ctx["message_ok"] = message_ok
         body = jinja.get_template("setup.html").render(**ctx).encode()
         self.send_response(code)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -129,29 +176,40 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def redirect(self, path: str, msg: str = "") -> None:
+    def redirect(self, path: str, msg: str = "", ok: bool = True) -> None:
         Handler._message = msg
+        Handler._message_ok = ok
         self.send_response(303)
         self.send_header("Location", path)
         self.end_headers()
 
     def do_GET(self) -> None:
-        if urlparse(self.path).path == "/stop":
+        path = urlparse(self.path).path
+        if path == "/stop":
             self.render("Wizard stopped. You can close this tab.")
             os._exit(0)
+        if path == "/test/gsc":
+            success, msg = test_gsc_connection()
+            self.redirect("/", msg, success)
+            return
         msg = Handler._message
+        msg_ok = Handler._message_ok
         Handler._message = ""
-        self.render(msg)
+        Handler._message_ok = True
+        self.render(msg, msg_ok)
 
     def do_POST(self) -> None:
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length)
         path = urlparse(self.path).path
+        content_type = self.headers.get("Content-Type", "")
 
         if path == "/install":
-            ok = install_deps()
+            success = install_deps()
             self.redirect(
-                "/", "Dependencies installed." if ok else "Installation failed — check terminal."
+                "/",
+                "Dependencies installed." if success else "Installation failed — check terminal.",
+                success,
             )
 
         elif path == "/create-env":
@@ -160,13 +218,23 @@ class Handler(BaseHTTPRequestHandler):
             self.redirect("/", ".env file created.")
 
         elif path == "/upload":
-            content_type = self.headers.get("Content-Type", "")
-            target, file_data = parse_multipart(body, content_type)
+            fields = parse_multipart(body, content_type)
+            target = fields.get("target", "")
+            file_data = fields.get("file", b"")
             if target and file_data:
-                ok, msg = save_uploaded_key(target, file_data)
+                success, msg = save_uploaded_key(str(target), bytes(file_data))
             else:
-                msg = "Upload failed — no file received."
-            self.redirect("/", msg)
+                success, msg = False, "Upload failed — no file received."
+            self.redirect("/", msg, success)
+
+        elif path == "/test/gpc":
+            fields = parse_multipart(body, content_type)
+            package_name = str(fields.get("package_name", "")).strip()
+            if not package_name:
+                # fall back to env
+                package_name = os.environ.get("GPC_PACKAGE_NAME", "")
+            success, msg = test_gpc_connection(package_name)
+            self.redirect("/", msg, success)
 
         else:
             self.redirect("/")
