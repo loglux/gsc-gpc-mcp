@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>gsc-gpc-mcp Setup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0 }
+  body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 32px 16px }
+  .wrap { max-width: 680px; margin: 0 auto }
+  h1 { font-size: 22px; font-weight: 700; color: #f8fafc; margin-bottom: 4px }
+  .sub { color: #94a3b8; font-size: 14px; margin-bottom: 28px }
+  .section { margin-bottom: 24px }
+  .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #64748b; margin-bottom: 10px }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px }
+  .card-title { font-weight: 600; font-size: 15px; margin-bottom: 6px }
+  .detail { color: #94a3b8; font-size: 13px; margin-top: 4px }
+  code { background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 1px 6px; font-size: 13px; color: #7dd3fc }
+  .btn { background: #3b82f6; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600 }
+  .btn:hover { background: #2563eb }
+  .btn-sm { background: #334155; color: #e2e8f0; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 500 }
+  .btn-sm:hover { background: #475569 }
+  .badge { border-radius: 4px; padding: 2px 8px; font-size: 13px; font-weight: 600; color: #fff }
+  .badge-ok { background: #22c55e }
+  .badge-err { background: #ef4444 }
+  .msg { background: #14532d; border: 1px solid #16a34a; border-radius: 6px; padding: 10px 14px; margin-bottom: 20px; font-size: 14px; color: #86efac }
+  .ready { background: #1e3a5f; border: 1px solid #3b82f6; border-radius: 8px; padding: 16px; margin-top: 16px; font-size: 14px; line-height: 1.8 }
+  .ready code { display: block; margin: 2px 0 }
+  a { color: #60a5fa }
+  .step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; font-size: 14px; color: #94a3b8 }
+  .step-num { background: #334155; color: #94a3b8; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px }
+  .footer { margin-top: 32px; font-size: 12px; color: #334155; text-align: center }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>gsc-gpc-mcp</h1>
+  <div class="sub">Setup Wizard</div>
+
+  {% if message %}
+  <div class="msg">{{ message }}</div>
+  {% endif %}
+
+  {# ── Prerequisites ── #}
+  <div class="section">
+    <div class="section-title">Prerequisites</div>
+    <div class="card">
+      <div class="card-title">
+        Python
+        <span class="badge badge-ok">✓ {{ python }}</span>
+      </div>
+      <div class="detail">
+        Dependencies
+        {% if deps_ok %}
+          <span class="badge badge-ok">✓ installed</span>
+        {% else %}
+          <span class="badge badge-err">✗ missing</span>
+        {% endif %}
+      </div>
+      {% if not deps_ok %}
+      <form method="POST" action="/install" style="margin-top:8px">
+        <button type="submit" class="btn">Install dependencies</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Service Account Keys ── #}
+  <div class="section">
+    <div class="section-title">Service Account Keys</div>
+
+    <div class="card" style="margin-bottom:16px;border-color:#334155">
+      <div class="card-title" style="font-size:13px;color:#94a3b8">How to create service accounts</div>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>Open <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank">Google Cloud Console → Service Accounts</a></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>Enable <b>Google Search Console API</b> and <b>Google Play Android Developer API</b></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>Create two service accounts, download JSON keys, upload below</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>GSC: Search Console → Settings → Users → add service account email</div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div>GPC: Play Console → Setup → API access → grant service account</div>
+      </div>
+    </div>
+
+    {% for key in [gsc, gpc] %}
+    <div class="card">
+      <div class="card-title">
+        {{ key.label }}
+        {% if key.ok %}
+          <span class="badge badge-ok">✓ valid</span>
+        {% else %}
+          <span class="badge badge-err">✗ missing</span>
+        {% endif %}
+      </div>
+      <div class="detail">File: <code>credentials/{{ key.file }}</code></div>
+      {% if key.ok and key.data %}
+      <div class="detail">
+        project: <b>{{ key.data.project_id }}</b> ·
+        email: <b>{{ key.data.client_email }}</b>
+      </div>
+      {% endif %}
+      {% if not key.ok %}
+      <form method="POST" action="/upload" enctype="multipart/form-data" style="margin-top:8px">
+        <input type="hidden" name="target" value="{{ key.file }}">
+        <input type="file" name="file" accept=".json" required style="font-size:13px">
+        <button type="submit" class="btn-sm">Upload</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── Environment ── #}
+  <div class="section">
+    <div class="section-title">Environment</div>
+    <div class="card">
+      <div class="card-title">
+        .env file
+        {% if env_exists %}
+          <span class="badge badge-ok">✓ exists</span>
+        {% else %}
+          <span class="badge badge-err">✗ missing</span>
+        {% endif %}
+      </div>
+      <div class="detail">Stores key file names for local and Docker usage</div>
+      {% if not env_exists %}
+      <form method="POST" action="/create-env" style="margin-top:8px">
+        <button type="submit" class="btn-sm">Create .env</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Ready ── #}
+  {% if all_ok %}
+  <div class="ready">
+    <b>✓ Setup complete!</b><br><br>
+    <b>Local HTTP mode:</b><br>
+    <code>PORT=8001 python -m gsc.server</code>
+    <code>PORT=8002 python -m gpc.server</code><br>
+    <b>Docker:</b><br>
+    <code>docker compose up -d</code><br><br>
+    Register backends in
+    <a href="https://github.com/loglux/authmcp-gateway" target="_blank">authmcp-gateway</a>
+    — see README.md → Setup → Step 4.
+  </div>
+  {% endif %}
+
+  <div class="footer">
+    Refresh to recheck status ·
+    <a href="/stop">Stop wizard</a>
+  </div>
+
+</div>
+</body>
+</html>

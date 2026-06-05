@@ -20,6 +20,7 @@ dev = [
     "pytest-cov>=4.1",
     "ruff>=0.1.0",
     "mypy>=1.6",
+    "jinja2>=3.1",
 ]
 
 [build-system]
@@ -41,7 +42,7 @@ target-version = "py311"
 select = ["E", "F", "W", "I", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/*.py" = ["E501"]  # HTML template strings have long lines by nature
+"scripts/*.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"
