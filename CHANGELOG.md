@@ -9,6 +9,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.3] - 2026-06-05
+
+### Added
+- `scripts/setup.py` — интерактивный CLI визард: проверка Python, зависимостей, ключей, создание `.env`, запуск тестов (`make setup`)
+- `scripts/setup_web.py` — веб-визард на `http://localhost:7777`: загрузка JSON ключей через браузер, статус всех шагов (`make setup-web`)
+- `scripts/templates/setup.html` — Jinja2 шаблон для веб-визарда (HTML отделён от логики)
+- `jinja2>=3.1` добавлен в dev зависимости
+- `make setup` и `make setup-web` targets в Makefile
+
+### Refactored
+- `GSC_API_VERSION` и `GPC_API_VERSION` вынесены как именованные константы в `shared/auth.py` — версии API меняются в одном месте
+- `E501` исключён для `scripts/*.py` в ruff конфиге (HTML в строках неизбежен в setup.py до переноса в шаблон)
+
+---
+
 ## [0.1.2] - 2026-06-05
 
 ### Added
