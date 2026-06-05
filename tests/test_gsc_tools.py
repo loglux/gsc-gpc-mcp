@@ -1,5 +1,7 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+
 import pytest
+
 from gsc import tools
 
 
@@ -38,7 +40,9 @@ def test_get_performance_custom_dimensions(mock_service):
 
 
 def test_inspect_url(mock_service):
-    expected = {"inspectionResult": {"indexStatusResult": {"coverageState": "Submitted and indexed"}}}
+    expected = {
+        "inspectionResult": {"indexStatusResult": {"coverageState": "Submitted and indexed"}}
+    }
     mock_service.urlInspection().index().inspect().execute.return_value = expected
 
     result = tools.inspect_url(mock_service, "https://example.com/", "https://example.com/page")

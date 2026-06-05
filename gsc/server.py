@@ -1,6 +1,7 @@
 from fastmcp import FastMCP
-from shared.auth import build_gsc_service
+
 from gsc import tools
+from shared.auth import build_gsc_service
 
 mcp = FastMCP("google-search-console")
 _service = None
@@ -30,7 +31,9 @@ def gsc_get_performance(
         dimensions: List of dimensions to group by: query, page, country, device, date
         row_limit: Max rows to return (default 1000, max 25000)
     """
-    return tools.get_performance(_get_service(), site_url, start_date, end_date, dimensions, row_limit)
+    return tools.get_performance(
+        _get_service(), site_url, start_date, end_date, dimensions, row_limit
+    )
 
 
 @mcp.tool()

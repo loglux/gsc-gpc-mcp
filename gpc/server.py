@@ -1,6 +1,7 @@
 from fastmcp import FastMCP
-from shared.auth import build_gpc_service
+
 from gpc import tools
+from shared.auth import build_gpc_service
 
 mcp = FastMCP("google-play-console")
 _service = None
