@@ -9,6 +9,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.5] - 2026-06-05
+
+### Fixed
+- Web wizard GPC test form: added `enctype="multipart/form-data"` — `package_name` field was silently dropped when form submitted as `application/x-www-form-urlencoded`
+- Web wizard now binds to `0.0.0.0` instead of `localhost` — accessible from Docker network (e.g. via Playwright container)
+
+### Changed
+- Dockerfile: `python:3.12-slim` → `python:3.13-slim`
+- CI test matrix: added Python 3.13
+- ruff `target-version` and mypy `python_version`: `py311`/`3.11` → `py313`/`3.13`
+- GPC default port: `8002` → `8005` (8002 conflicts with `discourse-analysis` container on this host)
+
+---
+
 ## [0.1.4] - 2026-06-05
 
 ### Added
