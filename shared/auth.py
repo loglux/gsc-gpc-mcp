@@ -21,16 +21,17 @@ def load_credentials(json_filename: str, scopes: list[str]) -> service_account.C
 
 
 def build_gsc_service():
-    creds = load_credentials(
-        os.environ.get("GSC_KEY_FILE", "gsc-service-account.json"),
-        GSC_SCOPES,
+    # GOOGLE_KEY_FILE overrides individual keys — one SA for both services
+    key_file = os.environ.get("GOOGLE_KEY_FILE") or os.environ.get(
+        "GSC_KEY_FILE", "gsc-service-account.json"
     )
+    creds = load_credentials(key_file, GSC_SCOPES)
     return build("searchconsole", "v1", credentials=creds)
 
 
 def build_gpc_service():
-    creds = load_credentials(
-        os.environ.get("GPC_KEY_FILE", "gpc-service-account.json"),
-        GPC_SCOPES,
+    key_file = os.environ.get("GOOGLE_KEY_FILE") or os.environ.get(
+        "GPC_KEY_FILE", "gpc-service-account.json"
     )
+    creds = load_credentials(key_file, GPC_SCOPES)
     return build("androidpublisher", "v3", credentials=creds)
