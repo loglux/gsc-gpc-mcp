@@ -9,6 +9,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.4] - 2026-06-05
+
+### Added
+- **Test connection** в CLI визарде (Step 3): реальный вызов GSC `list_sites()` и GPC `reviews.list()` после валидации ключей
+- **Test connection** в веб-визарде: кнопка `⚡ Test connection` появляется рядом с каждым валидным ключом
+- **GPC package name** input в веб-визарде — поле для ввода package name прямо в UI; автозаполняется из `GPC_PACKAGE_NAME` env var
+- **Upload / Replace key** — файловый upload для обоих ключей прямо из браузера
+- `gpc_package` добавлен в `get_status()` — пробрасывается в шаблон
+- `message_ok` флаг — зелёное/красное сообщение в зависимости от результата операции
+
+### Changed
+- `parse_multipart()` переписан: теперь возвращает `dict[str, bytes | str]` — text fields как строки, file fields как bytes; убирает хрупкий последовательный поиск полей
+- `step_env()` переименован из Step 3 в Step 4 — после теста коннекшена
+- HTML шаблон: кнопки сгруппированы в `.row`, добавлен `.btn-test` стиль, `.divider` между секциями
+
+---
+
 ## [0.1.3] - 2026-06-05
 
 ### Added
