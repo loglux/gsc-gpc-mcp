@@ -33,19 +33,12 @@ Claude ↔ authmcp-gateway ↔ gsc-gpc-mcp ↔ Google APIs
 
 ### 1. Service Accounts
 
-You can use **one shared key** or **two separate keys** (recommended for production):
-
-| Mode | Env var | When to use |
-|------|---------|-------------|
-| Two keys (recommended) | `GSC_KEY_FILE`, `GPC_KEY_FILE` | Production — if one key leaks, the other service is safe |
-| One shared key | `GOOGLE_KEY_FILE` | Simpler setup, both servers use same SA |
-
-**Two separate service accounts (recommended):**
-
-Create in [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts):
+Create two service accounts in [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts):
 
 - `gsc-reader@YOUR_PROJECT.iam.gserviceaccount.com` — scope: `webmasters.readonly`
 - `gpc-reader@YOUR_PROJECT.iam.gserviceaccount.com` — scope: `androidpublisher`
+
+Download JSON keys and place them in `credentials/`:
 
 ```
 credentials/
@@ -53,16 +46,7 @@ credentials/
 └── gpc-service-account.json
 ```
 
-**One shared service account:**
-
-Create a single SA, enable both APIs in your Google Cloud project, download one JSON key:
-
-```
-credentials/
-└── google-service-account.json
-```
-
-Set `GOOGLE_KEY_FILE=google-service-account.json` in your environment or `docker-compose.yml`.
+> **Note:** If you prefer a single service account for both, set `GOOGLE_KEY_FILE=your-sa.json` — it takes priority over `GSC_KEY_FILE`/`GPC_KEY_FILE`.
 
 ### 2. Grant Access
 
